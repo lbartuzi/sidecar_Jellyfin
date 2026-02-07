@@ -1,0 +1,64 @@
+services:
+  jellyfin-organizer:
+    image: sidecar_jellyfin:latest
+    #build:
+    #  context: ./app
+    container_name: jellyfin-organizer
+    restart: unless-stopped
+    environment:
+      # ---- required ----
+      JELLYFIN_URL: "http://jellyfinIP:8096"
+      JELLYFIN_API_KEY: "jellyfin_API_LEY"
+      JELLYFIN_USER_ID: "Jellyfin_USER_ID" #not sure if still needed
+
+      # ---- optional ----
+      # Comma-separated include list. Defaults: "Movie"
+      INCLUDE_ITEM_TYPES: "Movie"
+      # Comma-separated exclude libraries by name (optional)
+      EXCLUDE_LIBRARIES: ""
+      # Dry-run means "never write to Jellyfin" unless you explicitly toggle off
+      DRY_RUN: "false"
+      # Scan scheduling (disabled by default)
+      ENABLE_SCHEDULER: "false"
+      SCAN_CRON: "0 3 * * *"  # daily 03:00
+      # Suggestions behavior
+      MIN_GROUP_SIZE: "2"
+      MIN_CONFIDENCE: "0.70"
+      ENABLE_FRANCHISE: "true"
+      ENABLE_STUDIO: "true"
+      ENABLE_FORMAT: "true"
+      ENABLE_LENGTH: "true"
+      ENABLE_AUDIENCE: "true"
+      ENABLE_MOOD: "true"
+      
+      TOP_STUDIOS: "20"
+      STUDIO_ALLOWLIST_JSON: '["Pixar","Studio Ghibli","A24","Marvel Studios","Lucasfilm","DreamWorks","Illumination","Disney Animation","Disney"]'
+      #FRANCHISE_RULES_JSON: '{"Star Wars":["star wars"],"Police Academy":["police academy"]}'
+
+      # Optional: add your own franchise keywords
+      # Format: JSON string mapping collection name -> list of keywords
+      FRANCHISE_RULES_JSON: '{"Police Academy": ["police academy"], "James Bond": ["james bond", "007"],"Mission: Impossible": ["mission: impossible", "mission impossible"],"Star Wars":["star wars"],"Harry Potter":["harry potter"]}'
+
+      # App settings
+      HOST: "0.0.0.0"
+      PORT: "8088"
+      LOG_LEVEL: "INFO"
+
+    ports:
+      - "8088:8088"
+    volumes:
+      - jellyfin_organizer_data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8088/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # Best-practice: avoid root
+    user: "1000:1000"
+    # Best-practice: read-only filesystem except /data and /tmp
+    read_only: true
+    tmpfs:
+      - /tmp
+
+volumes:
+  jellyfin_organizer_data:
